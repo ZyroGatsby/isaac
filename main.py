@@ -1,14 +1,17 @@
 from transformers import pipeline, SamModel, SamProcessor
 import torch
 import numpy as np
+from PIL import Image
+import io
+import os
 
 # Initialize OWLv2 detector and SAM models
 checkpoint = "google/owlvit-base-patch16"
 detector = pipeline(model=checkpoint, task="zero-shot-object-detection")
-sam_model = SamModel.from_pretrained("facebook/sam-vit-base").to("cuda")
+sam_model = SamModel.from_pretrained("facebook/sam-vit-base").to("cpu")
 sam_processor = SamProcessor.from_pretrained("facebook/sam-vit-base")
 
-def main(image, texts, threshold):
+def main(image_data, texts, threshold, result_folder="results"):
     """
     Main function to perform object detection and mask generation.
 
@@ -21,6 +24,9 @@ def main(image, texts, threshold):
         tuple: Image data and result labels with masks.
     """
     texts = texts.split(",")
+
+    # Load image using PIL
+    image = Image.open(io.BytesIO(image_data))
 
     # Perform object detection on the image
     predictions = detector(
@@ -44,7 +50,7 @@ def main(image, texts, threshold):
                 image,
                 input_boxes=[[[box]]],
                 return_tensors="pt"
-            ).to("cuda")
+            ).to("cpu")
         
         # Perform mask generation using SAM model
         with torch.no_grad():
@@ -61,8 +67,19 @@ def main(image, texts, threshold):
         # Append the mask and corresponding label to the result labels list
         result_labels.append((mask, label))
 
-    # Return the result labels dictionary
-    return image, result_labels
+    # # Return the result labels dictionary
+    # return image, result_labels
+
+   # Create the result folder if it doesn't exist
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder)
+
+    # Save the processed image to the result folder
+    result_image_path = os.path.join(result_folder, "processed_image.jpeg")
+    image.save(result_image_path)
+
+    print("Processed image saved:", result_image_path)
+    print("Result Labels:", result_labels)
 
 if __name__ == "__main__":
     # Example usage (for integration to CVAT read concept document)
@@ -73,4 +90,4 @@ if __name__ == "__main__":
     texts = "cat,dog"
     threshold = 0.1
 
-    main(image=image_data, texts=texts, threshold=threshold)
+    main(image_data, texts=texts, threshold=threshold)
