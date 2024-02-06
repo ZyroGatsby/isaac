@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "code"
+version = "0.1.0"
+description = "Main function to perform object detection and mask generation"
+authors = ["ZyroGatsby <63269088+ZyroGatsby@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.2.0"
+transformers = "^4.37.2"
+numpy = "^1.26.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
